@@ -24,6 +24,8 @@
 #include "spark_wiring_ticks.h"
 #include "dtls_session_persist.h"
 
+#include "system_utilities.h"
+
 #define IPNUM(ip)       ((ip)>>24)&0xff,((ip)>>16)&0xff,((ip)>> 8)&0xff,((ip)>> 0)&0xff
 
 namespace {
@@ -143,6 +145,12 @@ int spark_cloud_socket_connect()
 #endif // HAL_PLATFORM_CLOUD_TCP
         }
         particle_key_errors |= SERVER_ADDRESS_BLANK;
+    }
+    // update server address after it was potentially restored from backup
+    if (server_addr.addr_type == DOMAIN_NAME) {
+        if (!update_public_server_domain(&server_addr, nullptr)) {
+            LOG_DEBUG(WARN,"Server address was not updated!");
+        }
     }
     switch (server_addr.addr_type)
     {

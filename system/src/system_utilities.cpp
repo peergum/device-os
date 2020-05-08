@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
-  Copyright (c) 2013-2015 Particle Industries, Inc.  All rights reserved.
+  Copyright (c) 2020 Particle Industries, Inc.  All rights reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,8 @@
 #include "system_version.h"
 #include "static_assert.h"
 #include "spark_macros.h"
+#include "system_utilities.h"
+#include <stdio.h>
 
 using std::min;
 
@@ -54,4 +56,33 @@ int system_version_info(SystemVersionInfo* info, void* /*reserved*/)
         }
     }
     return sizeof(SystemVersionInfo);
+}
+
+int update_public_server_domain(ServerAddress* server_addr, void* /*reserved*/)
+{
+    if (server_addr)
+    {
+        const size_t MAJOR_VERSION_TOKEN_SIZE_MAX = 6; // good for "v0." ~ "v255." which should last a while
+        const char ID_TOKEN_STR[] = "$id.";
+        size_t max_size = sizeof(server_addr->domain);
+        size_t server_addr_len = strlen(server_addr->domain);
+        if ( (server_addr_len + MAJOR_VERSION_TOKEN_SIZE_MAX) < max_size)
+        {
+            char* id_ptr = strstr(server_addr->domain, ID_TOKEN_STR);
+            if (id_ptr && (id_ptr - server_addr->domain) == 0) { // $id. must be leading the domain
+                SystemVersionInfo sys_ver;
+                char new_domain[sizeof(server_addr->domain)] = {};
+                system_version_info(&sys_ver, nullptr);
+                uint8_t major_version = BYTE_N(sys_ver.versionNumber, 3);
+
+                int new_size = snprintf(new_domain, server_addr_len + MAJOR_VERSION_TOKEN_SIZE_MAX,
+                    "%sv%d.%s", ID_TOKEN_STR, major_version, id_ptr + sizeof(ID_TOKEN_STR)-1);
+                if (new_size > 0 && new_size < (int)max_size) {
+                    strncpy(server_addr->domain, new_domain, new_size);
+                    return new_size;
+                }
+            }
+        }
+    }
+    return 0;
 }
