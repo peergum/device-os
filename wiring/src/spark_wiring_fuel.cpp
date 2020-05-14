@@ -253,18 +253,23 @@ void FuelGauge::readConfigRegister(byte &MSB, byte &LSB) {
 
 void FuelGauge::readRegister(byte startAddress, byte &MSB, byte &LSB) {
     std::lock_guard<FuelGauge> l(*this);
-    i2c_.beginTransmission(MAX17043_ADDRESS);
+    WireTransmission config(MAX17043_ADDRESS);
+    config.timeout(FUELGAUGE_DEFAULT_TIMEOUT);
+    i2c_.beginTransmission(config);
     i2c_.write(startAddress);
     i2c_.endTransmission(true);
 
-    i2c_.requestFrom(MAX17043_ADDRESS, 2, true);
+    config.quantity(2);
+    i2c_.requestFrom(config);
     MSB = i2c_.read();
     LSB = i2c_.read();
 }
 
 void FuelGauge::writeRegister(byte address, byte MSB, byte LSB) {
     std::lock_guard<FuelGauge> l(*this);
-    i2c_.beginTransmission(MAX17043_ADDRESS);
+    WireTransmission config(MAX17043_ADDRESS);
+    config.timeout(FUELGAUGE_DEFAULT_TIMEOUT);
+    i2c_.beginTransmission(config);
     i2c_.write(address);
     i2c_.write(MSB);
     i2c_.write(LSB);

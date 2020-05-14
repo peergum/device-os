@@ -75,6 +75,7 @@ public:
     bool unlock();
 
 private:
+    static constexpr system_tick_t FUELGAUGE_DEFAULT_TIMEOUT = 10; // In millisecond
 
     void readConfigRegister(byte &MSB, byte &LSB);
     void readRegister(byte startAddress, byte &MSB, byte &LSB);
